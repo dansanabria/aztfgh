@@ -7,10 +7,6 @@ on:
   pull_request:
     branches:
     - main
-  workflow_run:
-    workflows: ["Terraform Unit Tests"]
-    types:
-      - completed
 
 #Special permissions required for OIDC authentication
 permissions:
@@ -27,7 +23,6 @@ env:
 
 jobs:
   terraform-plan:
-    if: ${{ github.event_name == 'push' || github.event_name == 'pull_request' && github.event.workflow_run.conclusion == 'success' }}
     name: 'Terraform Plan Nonprod'
     runs-on: ubuntu-latest
     env:
