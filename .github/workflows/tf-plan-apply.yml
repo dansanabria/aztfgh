@@ -23,7 +23,7 @@ env:
 
 jobs:
   terraform-plan:
-    name: 'Terraform Plan'
+    name: 'Terraform Plan Nonprod'
     runs-on: ubuntu-latest
     env:
       #this is needed since we are running terraform with read-only permissions
@@ -44,7 +44,7 @@ jobs:
 
     # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
     - name: Terraform Init
-      run: terraform init
+      run: terraform init -backend-config="key=nonprod.terraform.tfstate"
 
     # Checks that all Terraform configuration files adhere to a canonical format
     # Will fail the build if not
@@ -57,7 +57,7 @@ jobs:
       id: tf-plan
       run: |
         export exitcode=0
-        terraform plan -detailed-exitcode -no-color -out tfplan || export exitcode=$?
+        terraform plan -var-file ../environments/nonprod.tfvars -detailed-exitcode -no-color -out nonprod.tfplan || export exitcode=$?
 
         echo "exitcode=$exitcode" >> $GITHUB_OUTPUT
 
@@ -72,14 +72,14 @@ jobs:
     - name: Publish Terraform Plan
       uses: actions/upload-artifact@v4
       with:
-        name: tfplan
-        path: tfplan
+        name: nonprod.tfplan
+        path: nonprod.tfplan
 
     # Create string output of Terraform Plan
     - name: Create String Output
       id: tf-plan-string
       run: |
-        TERRAFORM_PLAN=$(terraform show -no-color tfplan)
+        TERRAFORM_PLAN=$(terraform show -no-color nonprod.tfplan)
 
         delimiter="$(openssl rand -hex 8)"
         echo "summary<<${delimiter}" >> $GITHUB_OUTPUT
@@ -134,14 +134,14 @@ jobs:
 
     # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
     - name: Terraform Init
-      run: terraform init
+      run: terraform init -backend-config="key=nonprod.terraform.tfstate"
 
     # Download saved plan from artifacts
     - name: Download Terraform Plan
       uses: actions/download-artifact@v4
       with:
-        name: tfplan
+        name: nonprod.tfplan
 
     # Terraform Apply
     - name: Terraform Apply
-      run: terraform apply -auto-approve tfplan
+      run: terraform apply -auto-approve nonprod.tfplan
